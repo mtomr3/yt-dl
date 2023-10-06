@@ -39,13 +39,13 @@ class YoutubeDownloader:
 	def default_opts(self):
 		class MyLogger(object):
 		    def debug(self, msg):
-		        pass
+		        print("    debug:", msg)
 
 		    def warning(self, msg):
-		        pass
+		        print("  warn   :", msg)
 
 		    def error(self, msg):
-		        print(msg)
+		        print("err      :", msg)
 
 		def my_hook(d):
 		    if d['status'] == 'finished':
@@ -57,6 +57,7 @@ class YoutubeDownloader:
 			# "outtmpl": "./YT/%(title)s.%(ext)s",
 			"logger": MyLogger(),
 			"progress_hooks": [my_hook],
+			"ffmpeg_location": "/usr/local/bin/ffmpeg",
 		}
 
 
