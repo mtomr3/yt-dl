@@ -1,5 +1,8 @@
 from typing import Dict, Any
-import yt_dlp as yt_pkg
+import yt_dlp
+import re
+import ffmpeg
+import io
 
 
 
@@ -8,11 +11,13 @@ class YoutubeDownloader:
 	def get_video(self, url):
 		return self.get(url=url, opts=self.video_opts)
 
-	def get_audio(self, url):
+	def get_audio(self, url, inmem=False):
+		if inmem:
+			return self.get_audio_in_memory(url=url)
 		return self.get(url=url, opts=self.audio_opts)
 
 	def get(self, url: str, opts: Dict[str, Any]):
-		with yt_pkg.YoutubeDL(opts) as ydl:
+		with yt_dlp.YoutubeDL(opts) as ydl:
 			ydl.download([url])
 
 	@property
@@ -36,20 +41,29 @@ class YoutubeDownloader:
 		}
 
 	@property
+	def audio_mem_opts(self):
+		return {
+			**self.audio_opts,
+			'format': 'bestaudio/best',
+			'outtmpl': '-',
+			'quiet': True
+		}
+
+	@property
 	def default_opts(self):
 		class MyLogger(object):
-		    def debug(self, msg):
-		        print("    debug:", msg)
+			def debug(self, msg):
+				print("    debug:", msg)
 
-		    def warning(self, msg):
-		        print("  warn   :", msg)
+			def warning(self, msg):
+				print("  warn   :", msg)
 
-		    def error(self, msg):
-		        print("err      :", msg)
+			def error(self, msg):
+				print("err      :", msg)
 
 		def my_hook(d):
-		    if d['status'] == 'finished':
-		        print('Done downloading, now converting ...')
+			if d['status'] == 'finished':
+				print('Done downloading, now converting ...')
 
 		return {
 			# "outtmpl": "%(uploader)s%(title)s.%(ext)s",
@@ -61,4 +75,57 @@ class YoutubeDownloader:
 		}
 
 
+	def get_audio_in_memory(self, url):
+		opts = self.audio_mem_opts
+		with yt_dlp.YoutubeDL(opts) as ydl:
+			result = ydl.extract_info(url, download=False)
+			url = result['url']
+			process = (
+				ffmpeg
+				.input(url)
+				.output('pipe:1', format='mp3', audio_bitrate='192k')
+				.run_async(pipe_stdout=True, pipe_stderr=True)
+			)
+			mp3_data = io.BytesIO(process.stdout.read())
+			return mp3_data
 
+
+class YoutubeMetadataProvider:
+	@staticmethod
+	def _type_cast_id(s):
+		if "youtube.com" in s:
+			s = YoutubeMetadataProvider.get_id(s)
+		return s
+
+	@staticmethod
+	def get_id(url):
+	    regex = r"(?:v=|\/)([0-9A-Za-z_-]{11}).*"
+	    match = re.search(regex, url)
+	    return match.group(1) if match else None
+
+	@staticmethod
+	def get_thumbnail_url(id):
+		data = YoutubeMetadataProvider.get_data(id)
+		return data["thumbnail_url"]
+
+	@staticmethod
+	def get_data(id):
+		id = YoutubeMetadataProvider._type_cast_id(id)
+		# import urllib.request
+		import json
+		import urllib
+
+		params = {"format": "json", "url": "https://www.youtube.com/watch?v=%s" % id}
+		url = "https://www.youtube.com/oembed"
+		query_string = urllib.parse.urlencode(params)
+		url = url + "?" + query_string
+
+		with urllib.request.urlopen(url) as response:
+		    response_text = response.read()
+		    data = json.loads(response_text.decode())
+		    return data
+
+	@staticmethod
+	def get_title(id):
+		data = YoutubeMetadataProvider.get_data(id)
+		return data["title"]
