@@ -16,7 +16,7 @@ def timed_success(body, icon=None, seconds=3):
 	elem.empty()
 	return elem
 
-
+st.set_page_config(page_title="YouTube MP3")
 st.title("Simple YouTube MP3 Download")
 link = st.text_input('Enter link')
 
