@@ -28,12 +28,18 @@ if link:
 		st.image(get_thumbnail_url(link), use_column_width=True)
 
 		with st.spinner("Extracting audio..."):
-			audio = get_audio(link, inmem=True)
+			audio = get_audio(link, inmem=False, fldr=tmpdir)
 
-			with open(fname, "wb") as f:
-				f.write(audio.getvalue())
+			# with open(fname, "wb") as f:
+			# 	f.write(audio.getvalue())
+
+			with open(fname, "rb") as f:
+				audio = f.read()
 
 			st.audio(fname)
+
+			if os.path.exists(fname):
+				os.remove(fname)
 
 			st.download_button(
 			    label=f"Download {title}",

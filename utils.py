@@ -7,6 +7,9 @@ import io
 
 
 class YoutubeDownloader:
+	def __init__(self, fldr=None):
+		self.vid_fldr = fldr or "./YT/video/"
+		self.audio_fldr = fldr or "./YT/audio/"
 
 	def get_video(self, url):
 		return self.get(url=url, opts=self.video_opts)
@@ -14,6 +17,7 @@ class YoutubeDownloader:
 	def get_audio(self, url, inmem=False):
 		if inmem:
 			return self.get_audio_in_memory(url=url)
+		print(self.audio_opts)
 		return self.get(url=url, opts=self.audio_opts)
 
 	def get(self, url: str, opts: Dict[str, Any]):
@@ -24,7 +28,7 @@ class YoutubeDownloader:
 	def video_opts(self):
 		return {
 			**self.default_opts,
-			"outtmpl": "./YT/video/%(title)s.%(ext)s",
+			"outtmpl": self.vid_fldr + "%(title)s.%(ext)s",
 			"format": "best[ext=mp4]",
 		}
 
@@ -32,7 +36,7 @@ class YoutubeDownloader:
 	def audio_opts(self):
 		return {
 			**self.default_opts,
-			"outtmpl": "./YT/audio/%(title)s.%(ext)s",
+			"outtmpl": self.audio_fldr + "%(title)s.%(ext)s",
 		    'postprocessors': [{
 		        'key': 'FFmpegExtractAudio',
 		        'preferredcodec': 'mp3',

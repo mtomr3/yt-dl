@@ -8,11 +8,11 @@ Examples:
 
 from utils import YoutubeDownloader, YoutubeMetadataProvider
 
-def get_video(url):
-	return YoutubeDownloader().get_video(url)
+def get_video(url, fldr=None):
+	return YoutubeDownloader(fldr=fldr).get_video(url)
 
-def get_audio(url, inmem=False):
-	return YoutubeDownloader().get_audio(url, inmem=inmem)
+def get_audio(url, inmem=False, fldr=None):
+	return YoutubeDownloader(fldr=fldr).get_audio(url, inmem=inmem)
 
 def get_vid_data(url):
 	return YoutubeMetadataProvider.get_data(url)
